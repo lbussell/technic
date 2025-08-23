@@ -1,1 +1,1 @@
-# Generate LEGO Compatible gears with OpenSCAD
+# Generate LEGO Technic compatible parts with OpenSCAD
