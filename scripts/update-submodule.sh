@@ -17,7 +17,7 @@ if [[ -n $(git status -s) ]]; then
 fi
 
 echo "Updating BOSL2 submodule to latest commit..."
-git submodule update --remote --merge lib/BOSL2
+git submodule update --remote --rebase lib/BOSL2
 
 # Get the new commit hash
 NEW_SHA=$(cd lib/BOSL2 && git rev-parse --short HEAD)
