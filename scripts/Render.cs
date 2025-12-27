@@ -40,7 +40,7 @@ internal static class Program
         Directory.CreateDirectory("renders");
         openscad.OutputDirectory = "renders";
 
-        var imageTasks = partsConfig.Parts.Select(part => Part.Create(part.Path))
+        var imageTasks = partsConfig.Parts.Select(part => Part.Create(part.Path, part.Name, part.Parameters))
                                           .Select(openscad.RenderImage);
 
         var images = await Task.WhenAll(imageTasks);
@@ -69,8 +69,10 @@ internal partial class JsonContext : JsonSerializerContext
 record Part
 {
     public string Path { get; init; } = "";
+    public string? Name { get; init; }
+    public Dictionary<string, object>? Parameters { get; init; }
 
-    public static Part Create(string filePath)
+    public static Part Create(string filePath, string? name = null, Dictionary<string, object>? parameters = null)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException("The specified file does not exist.", filePath);
@@ -78,11 +80,11 @@ record Part
         if (System.IO.Path.GetExtension(filePath) != ".scad")
             throw new ArgumentException("The specified file is not a an '.scad' file.", nameof(filePath));
 
-        return new Part { Path = filePath };
+        return new Part { Path = filePath, Name = name, Parameters = parameters };
     }
 
     public string FilePath => Path;
-    public string Name => System.IO.Path.GetFileNameWithoutExtension(Path);
+    public string FileName => Name ?? System.IO.Path.GetFileNameWithoutExtension(Path);
 }
 
 class Openscad(string executablePath)
@@ -95,10 +97,30 @@ class Openscad(string executablePath)
 
     private async Task<RenderingResult> Render(Part part, string format)
     {
-        var fileName = $"{part.Name}.{format}";
+        var fileName = $"{part.FileName}.{format}";
         var output = Path.Combine(OutputDirectory, fileName);
-        await RunAsync($"{part.FilePath} -o {output}");
+        var arguments = $"{part.FilePath} -o {output}";
+        
+        if (part.Parameters != null)
+        {
+            foreach (var (key, value) in part.Parameters)
+            {
+                arguments += $" -D {key}={FormatParameterValue(value)}";
+            }
+        }
+        
+        await RunAsync(arguments);
         return new RenderingResult(fileName);
+    }
+
+    private static string FormatParameterValue(object value)
+    {
+        return value switch
+        {
+            string s => $"\"{s}\"",
+            bool b => b ? "true" : "false",
+            _ => value.ToString() ?? ""
+        };
     }
 
     private Task<BufferedCommandResult> RunAsync(string arguments) =>
