@@ -32,19 +32,23 @@ internal static class Program
 
         if (partsConfig?.Parts is null || partsConfig.Parts.Length == 0)
         {
-            WriteLine("Error: No parts found in JSON file.");
+            WriteLine("No parts found in JSON file.");
             return;
         }
 
         var openscad = GetOpenscad();
         Directory.CreateDirectory("renders");
-        openscad.OutputDirectory = "renders";
+        Directory.CreateDirectory("stl");
 
-        var imageTasks = partsConfig.Parts.Select(part => Part.Create(part.Path, part.Name, part.Parameters))
-                                          .Select(openscad.RenderImage);
+        var renderTasks = partsConfig.Parts.Select(part => Part.Create(part.Path, part.Name, part.Parameters))
+                                           .SelectMany(part => new[]
+                                           {
+                                               openscad.RenderImage(part, outputDirectory: "renders"),
+                                               openscad.RenderStl(part, outputDirectory: "stl")
+                                           });
 
-        var images = await Task.WhenAll(imageTasks);
-        WriteLine(string.Join(Environment.NewLine, images.Select(image => image.Path)));
+        var results = await Task.WhenAll(renderTasks);
+        WriteLine(string.Join(Environment.NewLine, results.Select(result => result.Path)));
     }
 
     private static Openscad GetOpenscad()
@@ -91,16 +95,18 @@ class Openscad(string executablePath)
 {
     private readonly Command _openScad = Cli.Wrap(executablePath);
 
-    public string OutputDirectory { get; set; } = Directory.GetCurrentDirectory();
+    public Task<RenderingResult> RenderImage(Part part, string outputDirectory) =>
+        Render(part, "png", outputDirectory);
 
-    public Task<RenderingResult> RenderImage(Part part) => Render(part, "png");
+    public Task<RenderingResult> RenderStl(Part part, string outputDirectory) =>
+        Render(part, "stl", outputDirectory);
 
-    private async Task<RenderingResult> Render(Part part, string format)
+    private async Task<RenderingResult> Render(Part part, string format, string outputDirectory)
     {
         var fileName = $"{part.FileName}.{format}";
-        var output = Path.Combine(OutputDirectory, fileName);
+        var output = Path.Combine(outputDirectory, fileName);
         var arguments = $"{part.FilePath} -o {output}";
-        
+
         if (part.Parameters != null)
         {
             foreach (var (key, value) in part.Parameters)
@@ -108,7 +114,7 @@ class Openscad(string executablePath)
                 arguments += $" -D {key}={FormatParameterValue(value)}";
             }
         }
-        
+
         await RunAsync(arguments);
         return new RenderingResult(fileName);
     }
