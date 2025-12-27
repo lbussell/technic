@@ -1,0 +1,76 @@
+{
+    "parts": [
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_12t",
+            "parameters": {
+                "num_teeth": 12,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_13t",
+            "parameters": {
+                "num_teeth": 13,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_14t",
+            "parameters": {
+                "num_teeth": 14,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_15t",
+            "parameters": {
+                "num_teeth": 15,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_16t",
+            "parameters": {
+                "num_teeth": 16,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_17t",
+            "parameters": {
+                "num_teeth": 17,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_18t",
+            "parameters": {
+                "num_teeth": 18,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_19t",
+            "parameters": {
+                "num_teeth": 19,
+                "thickness_studs": 0.5
+            }
+        },
+        {
+            "path": "parts/gear_base.scad",
+            "name": "gear_20t",
+            "parameters": {
+                "num_teeth": 20,
+                "thickness_studs": 0.5
+            }
+        }
+    ]
+}
