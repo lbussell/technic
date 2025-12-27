@@ -12,20 +12,91 @@ pin_inset_depth = 0.80;
 
 wall_thickness = 2;
 
+clutch_teeth_length = 1;
+clutch_teeth_width = 0.5;
+clutch_depth = studs(0.25);
+
+driving_ring_wall_thickness = 1.5;
+driving_ring_clearance = 0.15;
+
 center_tube_outer_diameter = max(axle_outer_diameter, pin_inner_diameter) + wall_thickness;
 
-module driving_ring(num_teeth=4)
+module driving_ring(depth_studs=1)
 {
-    depth = cstuds(2);
+    depth = cstuds(depth_studs);
+    clearance = 2*driving_ring_clearance;
 
-    diff("remove")
+    // Inside, where the clutch teeth meet up
+    driving_ring_inner_diameter =
+        center_tube_outer_diameter
+        + clutch_teeth_length*2
+        + clearance;
+
+    driving_ring_outer_wall_thickness = 1;
+    driving_ring_outer_diameter =
+        driving_ring_inner_diameter
+        + 2*driving_ring_outer_wall_thickness;
+
+    diff("remove", "keep")
     {
-        outer();
-        inner();
+        cyl(h=depth, d=driving_ring_outer_diameter)
+        {
+            xrot_copies(n=2) attach(TOP) tag("keep") clutch_teeth();
+            xrot_copies(n=2) clutch_inset();
+        }
+
+        // Inside inside, for the driving ring adapter
+        tag("remove")
+            linear_extrude(height=depth+fudge, center=true)
+            offset(delta=driving_ring_clearance)
+            driving_ring_interface_2d();
     }
 
-    module outer() cylinder(h=depth, d=center_tube_outer_diameter + wall_thickness, center=true);
-    module inner() tag("remove") cylinder(h=depth+fudge, d=center_tube_outer_diameter, center=true);
+    module clutch_teeth()
+    {
+        clutch_outer_r = driving_ring_inner_diameter/2 + clearance/2;
+        clutch_inner_r = clutch_outer_r - clutch_teeth_length;
+
+        down(clutch_depth/2)
+        zrot_copies(n=4, r=clutch_outer_r)
+        left(clutch_teeth_length/2)
+        cuboid([clutch_teeth_length, clutch_teeth_width, clutch_depth]);
+    }
+
+    module clutch_inset()
+        align(TOP, inside=true, shiftout=fudge)
+            cyl(h=clutch_depth, d=driving_ring_inner_diameter + clearance);
+}
+
+module driving_ring_adapter(depth_studs=1)
+{
+    depth = cstuds(depth_studs);
+
+    diff()
+    {
+        linear_extrude(height=depth, center=true)
+            driving_ring_interface_2d();
+
+        down(depth/2 + fudge/2)
+            axle_cross(depth+fudge);
+    }
+}
+
+module driving_ring_interface_2d()
+{
+    radius = 1.8;
+    inset_amount = 1.3;
+
+    offset_amount = center_tube_outer_diameter/2 + radius/inset_amount;
+
+    diff("remove2d")
+    {
+        circle(d=center_tube_outer_diameter);
+
+        zrot_copies(n=4, r=offset_amount, sa=45)
+            tag("remove2d")
+            circle(r=radius);
+    }
 }
 
 module gear(num_teeth=16, depth_studs=1, type="axle")
@@ -36,9 +107,6 @@ module gear(num_teeth=16, depth_studs=1, type="axle")
     is_clutch = type == "clutch";
     total_depth = is_clutch ? cstuds(0.75) : cstuds(depth_studs);
     gear_depth = is_clutch ? cstuds(0.5) : total_depth;
-    clutch_depth = studs(0.25);
-    clutch_teeth_length = 1;
-    clutch_teeth_width = 1;
 
     diff("remove")
     {
