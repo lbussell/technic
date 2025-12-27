@@ -4,19 +4,21 @@
 
 using CliWrap;
 using CliWrap.Buffered;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using static System.Console;
 
 internal static class Program
 {
     private const string OpenscadEnvVar = "OPENSCAD_PATH";
     private const string Usage = $"""
-        Usage: dotnet Render.cs -- path/to/part1.scad path/to/part2.scad ...
+        Usage: dotnet Render.cs -- parts.json
         Optionally set {OpenscadEnvVar} to your OpenSCAD executable if it is not on the PATH.
         """;
 
     private static async Task Main(string[] args)
     {
-        if (args.Length == 0
+        if (args.Length != 1
             || args.Contains("--help", StringComparer.OrdinalIgnoreCase)
             || args.Contains("-h", StringComparer.OrdinalIgnoreCase))
         {
@@ -24,12 +26,22 @@ internal static class Program
             return;
         }
 
+        var jsonPath = args[0];
+        var jsonContent = File.ReadAllText(jsonPath);
+        var partsConfig = JsonSerializer.Deserialize(jsonContent, JsonContext.Default.PartsConfig);
+
+        if (partsConfig?.Parts is null || partsConfig.Parts.Length == 0)
+        {
+            WriteLine("Error: No parts found in JSON file.");
+            return;
+        }
+
         var openscad = GetOpenscad();
         Directory.CreateDirectory("renders");
         openscad.OutputDirectory = "renders";
 
-        var imageTasks = args.Select(Part.Create)
-                             .Select(openscad.RenderImage);
+        var imageTasks = partsConfig.Parts.Select(part => Part.Create(part.Path))
+                                          .Select(openscad.RenderImage);
 
         var images = await Task.WhenAll(imageTasks);
         WriteLine(string.Join(Environment.NewLine, images.Select(image => image.Path)));
@@ -43,23 +55,34 @@ internal static class Program
     }
 }
 
+record PartsConfig
+{
+    public Part[] Parts { get; init; } = [];
+}
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+[JsonSerializable(typeof(PartsConfig))]
+internal partial class JsonContext : JsonSerializerContext
+{
+}
+
 record Part
 {
-    private Part(string filePath) => FilePath = filePath;
+    public string Path { get; init; } = "";
 
     public static Part Create(string filePath)
     {
         if (!File.Exists(filePath))
             throw new FileNotFoundException("The specified file does not exist.", filePath);
 
-        if (Path.GetExtension(filePath) != ".scad")
+        if (System.IO.Path.GetExtension(filePath) != ".scad")
             throw new ArgumentException("The specified file is not a an '.scad' file.", nameof(filePath));
 
-        return new(filePath);
+        return new Part { Path = filePath };
     }
 
-    public string FilePath { get; }
-    public string Name => Path.GetFileNameWithoutExtension(FilePath);
+    public string FilePath => Path;
+    public string Name => System.IO.Path.GetFileNameWithoutExtension(Path);
 }
 
 class Openscad(string executablePath)
