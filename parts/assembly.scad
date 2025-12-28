@@ -13,11 +13,17 @@ module assembly(t1=16, t2=20)
     shift_fork();
     driving_ring_adapter();
 
-    down(studs(1.5)) clutch_gear(t1);
-    down(studs(1.5)) right(studs(2)) axle_gear(num_teeth=32-t1);
+    down(studs(1.5))
+    {
+        clutch_gear(t1);
+        right(studs(2)) axle_gear(num_teeth=32-t1);
+    }
 
-    up(studs(1.5)) xrot(180) clutch_gear(t2);
-    up(studs(1)) right(studs(2)) axle_gear(num_teeth=32-t2);
+    up(studs(1.5)) xrot(180)
+    {
+        clutch_gear(t2);
+        right(studs(2)) axle_gear(num_teeth=32-t2);
+    }
 }
 
 module clutch_gear(num_teeth) zrot(45) gear(num_teeth, type="clutch");
