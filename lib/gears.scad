@@ -121,7 +121,7 @@ module gear(num_teeth=16, depth_studs=1, type="axle")
     // Clutch gears have fixed depth
     is_clutch = type == "clutch";
     total_depth = is_clutch ? cstuds(1) : cstuds(depth_studs);
-    gear_depth = is_clutch ? studs(0.5) : total_depth;
+    gear_depth = is_clutch ? cstuds(0.5) : total_depth;
     clutch_angle = 20;
 
     diff("remove")
