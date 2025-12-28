@@ -2,9 +2,11 @@ include <../lib/consts.scad>
 include <../lib/BOSL2/std.scad>
 include <../lib/BOSL2/gears.scad>
 
+fudge = 0.01;
+
 axle_outer_diameter = 5.52;
 axle_fillet_radius = 0.55;
-axle_cross_width = 1.87;
+axle_cross_width = 1.90;
 
 pin_inner_diameter = 5.10;
 pin_outer_diameter = 6.20;
@@ -15,15 +17,27 @@ wall_thickness = 0.8;
 clutch_teeth_length = 0.8;
 
 center_tube_outer_diameter = max(axle_outer_diameter, pin_inner_diameter) + 2*wall_thickness;
+adapter_small_outer_diameter = pin_inner_diameter + 2*wall_thickness;
+
+gear_clearance = 0.15;
+gear_wall_inner_diameter = adapter_small_outer_diameter + 2*gear_clearance; // some clearance
+gear_wall_outer_diameter = gear_wall_inner_diameter + wall_thickness*2;
 
 driving_ring_wall_thickness = 1.6;
 driving_ring_clearance = 0.15;
 
-interface_inner_diameter = center_tube_outer_diameter + driving_ring_clearance*2;
+interface_inner_diameter = gear_wall_outer_diameter + driving_ring_clearance*2;
 interface_outer_diameter = interface_inner_diameter + clutch_teeth_length*2;
 
 driving_ring_inner_diameter = interface_outer_diameter + driving_ring_clearance*2;
-driving_ring_outer_diameter = driving_ring_inner_diameter + driving_ring_wall_thickness*2;
+driving_ring_outer_diameter = driving_ring_inner_diameter + driving_ring_wall_thickness*3;
+
+shift_fork_depth = 1.0;
+shift_fork_width = 2.0;
+shift_fork_inset_depth = studs(1/2);
+shift_fork_inset_inner_diameter = driving_ring_outer_diameter - shift_fork_width;
+shift_fork_inset_outer_diameter = driving_ring_outer_diameter+fudge;
+shift_fork_outer_diameter = shift_fork_inset_outer_diameter + wall_thickness*2;
 
 module driving_ring(depth_studs=1)
 {
@@ -33,23 +47,60 @@ module driving_ring(depth_studs=1)
         cyl(d=driving_ring_outer_diameter, h=depth);
 
         tag("remove")
+        {
             linear_extrude(height=depth+fudge, center=true)
             offset(delta=driving_ring_clearance)
             driving_ring_interface_2d();
+            offset3d(driving_ring_clearance) shift_fork_ring();
+        }
     }
 }
 
-module driving_ring_adapter(depth_studs=1)
+module shift_fork()
 {
-    depth = cstuds(depth_studs);
+    difference()
+    {
+        shift_fork_ring();
+        pie_slice(h=shift_fork_inset_depth+fudge, d=shift_fork_outer_diameter+fudge, ang=150, center=true);
+    }
+}
 
+module shift_fork_ring()
+{
+    difference()
+    {
+        cyl(d=shift_fork_outer_diameter, h=shift_fork_inset_depth);
+
+        union()
+        {
+            down(shift_fork_inset_depth/4) cyl(d1=shift_fork_inset_outer_diameter, d2=shift_fork_inset_inner_diameter, h=shift_fork_inset_depth/2+fudge);
+            up(shift_fork_inset_depth/4) cyl(d1=shift_fork_inset_inner_diameter, d2=shift_fork_inset_outer_diameter, h=shift_fork_inset_depth/2+fudge);
+        }
+    }
+}
+
+module driving_ring_adapter()
+{
     diff()
     {
-        linear_extrude(height=depth, center=true)
-            driving_ring_interface_2d();
+        // linear_extrude(height=studs(1), center=true) driving_ring_interface_2d();
+        driving_ring_interface_3d();
+        cyl(d=adapter_small_outer_diameter, h=cstuds(3));
 
-        down(depth/2 + fudge/2)
-            axle_cross(depth+fudge);
+        up(studs(1/2)) axle_cross(studs(1));
+        down(studs(3/2)) axle_cross(studs(1));
+    }
+}
+
+module driving_ring_interface_3d(height=studs(1), center=true)
+{
+    difference()
+    {
+        cyl(d=interface_outer_diameter, h=height, chamfer=1.7, chamfang=30, center=center);
+        linear_extrude(height=height, center=center)
+            teeth(inner_diameter=interface_inner_diameter,
+                outer_diameter=interface_outer_diameter);
+
     }
 }
 
@@ -77,7 +128,6 @@ module gear(num_teeth=16, depth_studs=1, type="axle")
     {
         up(gear_depth/2)
             base_gear();
-        cyl(h=gear_depth + (total_depth-gear_depth)/2, d=driving_ring_inner_diameter, center=false);
         center_tube();
     }
 
@@ -85,18 +135,31 @@ module gear(num_teeth=16, depth_studs=1, type="axle")
     {
         center_depth = type == "clutch" ? total_depth : gear_depth;
 
-        center();
-        if (type == "axle") axle_cross(gear_depth+fudge);
-        if (type == "pin") pin_hole(gear_depth);
+        if (type == "axle")
+        {
+            center();
+            axle_cross(gear_depth+fudge);
+        }
+
+        if (type == "pin")
+        {
+            center();
+            pin_hole(gear_depth);
+        }
 
         if (type == "clutch")
         {
+            cyl(d=gear_wall_outer_diameter, h=center_depth, center=false);
+            tag("remove") down(fudge/2) cyl(d=gear_wall_inner_diameter, h=center_depth+fudge, center=false);
+
+            clutch_teeth_outer_diameter = gear_wall_outer_diameter + 2*clutch_teeth_length;
+            // Block the driving ring from going to far onto the gear
+            cyl(h=gear_depth + (total_depth-gear_depth)/2, d=clutch_teeth_outer_diameter, center=false);
+
             linear_extrude(height=center_depth)
-            teeth(
-                inner_diameter=center_tube_outer_diameter,
-                outer_diameter=center_tube_outer_diameter + 2*clutch_teeth_length,
-                angle=15);
-            pin_hole(center_depth, inset=false);
+                teeth(inner_diameter=gear_wall_outer_diameter,
+                    outer_diameter=clutch_teeth_outer_diameter,
+                    angle=15);
         }
 
         module center() cylinder(h=center_depth, d=center_tube_outer_diameter);

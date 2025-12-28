@@ -1,21 +1,18 @@
 {
     "matrix": [
         {
-            "path": "parts/gear_base.scad",
+            "path": "parts/clutch_gear.scad",
             "parameters": {
-                "num_teeth": [12, 13, 14, 15, 16, 17, 18, 19, 20],
-                "thickness_studs": [0.5]
+                "num_teeth": [12, 13, 14, 15, 16, 17, 18, 19, 20]
             }
         }
     ],
     "parts": [
         {
-            "path": "parts/gear_base.scad",
-            "name": "gear_20t",
-            "parameters": {
-                "num_teeth": 20,
-                "thickness_studs": 1
-            }
+            "path": "parts/driving_ring.scad"
+        },
+        {
+            "path": "parts/driving_ring_adapter.scad"
         }
     ]
 }
