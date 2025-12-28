@@ -14,8 +14,7 @@ fudge = 0.01;
 
 up(distribute_studs*3) driving_ring();
 up(distribute_studs*1) driving_ring_adapter();
-// up(distribute_studs*0) down(studs(1.25)) this_gear();
-// driving_ring_interface_2d();
+up(distribute_studs*0) down(studs(1.5)) this_gear();
 
 module this_gear()
     gear(
