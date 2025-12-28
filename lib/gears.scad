@@ -138,7 +138,7 @@ module gear(num_teeth=16, depth_studs=1, type="axle")
         if (type == "axle")
         {
             center();
-            axle_cross(gear_depth+fudge);
+            down(fudge/2) axle_cross(gear_depth+fudge);
         }
 
         if (type == "pin")
