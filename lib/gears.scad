@@ -6,7 +6,7 @@ fudge = 0.01;
 
 axle_outer_diameter = 5.52;
 axle_fillet_radius = 0.55;
-axle_cross_width = 1.90;
+axle_cross_width = 1.95;
 
 pin_inner_diameter = 5.10;
 pin_outer_diameter = 6.20;
@@ -19,7 +19,7 @@ clutch_teeth_length = 0.8;
 center_tube_outer_diameter = max(axle_outer_diameter, pin_inner_diameter) + 2*wall_thickness;
 adapter_small_outer_diameter = pin_inner_diameter + 2*wall_thickness;
 
-gear_clearance = 0.15;
+gear_clearance = 0.20;
 gear_wall_inner_diameter = adapter_small_outer_diameter + 2*gear_clearance; // some clearance
 gear_wall_outer_diameter = gear_wall_inner_diameter + wall_thickness*2;
 
@@ -37,7 +37,7 @@ shift_fork_width = 2.0;
 shift_fork_inset_depth = studs(1/2);
 shift_fork_inset_inner_diameter = driving_ring_outer_diameter - shift_fork_width;
 shift_fork_inset_outer_diameter = driving_ring_outer_diameter+fudge;
-shift_fork_outer_diameter = shift_fork_inset_outer_diameter + wall_thickness*2;
+shift_fork_outer_diameter = shift_fork_inset_outer_diameter + wall_thickness*4;
 
 module driving_ring(depth_studs=1)
 {
@@ -61,7 +61,7 @@ module shift_fork()
     difference()
     {
         shift_fork_ring();
-        pie_slice(h=shift_fork_inset_depth+fudge, d=shift_fork_outer_diameter+fudge, ang=150, center=true);
+        pie_slice(h=shift_fork_inset_depth+fudge, d=shift_fork_outer_diameter+fudge, ang=120, center=true);
     }
 }
 
