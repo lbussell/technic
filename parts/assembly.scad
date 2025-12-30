@@ -4,8 +4,16 @@ include <../lib/gears.scad>
 $fn=50;
 fudge = 0.01;
 
-assembly(t1=14, t2=16);
-up(studs(3.5)) assembly(18, 20);
+gearbox();
+
+module gearbox()
+{
+    xrot(180) yrot(90)
+    {
+        assembly(t1=14, t2=16);
+        up(studs(3.5)) assembly(18, 20);
+    }
+}
 
 module assembly(t1=16, t2=20)
 {
@@ -16,13 +24,13 @@ module assembly(t1=16, t2=20)
     down(studs(1.5))
     {
         clutch_gear(t1);
-        right(studs(2)) axle_gear(num_teeth=32-t1);
+        right(studs(3)) axle_gear(num_teeth=32-t1);
     }
 
     up(studs(1.5)) xrot(180)
     {
         clutch_gear(t2);
-        right(studs(2)) axle_gear(num_teeth=32-t2);
+        right(studs(3)) axle_gear(num_teeth=32-t2);
     }
 }
 

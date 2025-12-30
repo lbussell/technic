@@ -60,10 +60,14 @@ module driving_ring(depth_studs=1)
 
 module shift_fork()
 {
+    angle = 120;
     difference()
     {
         shift_fork_ring();
-        pie_slice(h=shift_fork_inset_depth+fudge, d=shift_fork_outer_diameter+fudge, ang=120, center=true);
+        zrot((180-angle)/2) pie_slice(h=shift_fork_inset_depth+fudge,
+            d=shift_fork_outer_diameter+1,
+            ang=angle,
+            center=true);
     }
 }
 
